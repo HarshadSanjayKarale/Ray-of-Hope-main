@@ -8,7 +8,9 @@ import ssl, smtplib
 from dotenv import load_dotenv
 import os
 
+
 load_dotenv()
+
 
 # Initialize Flask app
 app = Flask(__name__)
