@@ -2,17 +2,18 @@ from flask import Flask, request, render_template, flash, url_for, redirect, ses
 import pyrebase
 from flask_session import Session
 import requests.exceptions
-from datetime import timedelta
 from email.message import EmailMessage 
 import ssl, smtplib
 from dotenv import load_dotenv
 import os
+from helpers import login_required,apology
 
 load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.config["SESSION_PERMANENT"] = False
 app.config['SESSION_TYPE'] = 'filesystem'   
 Session(app)
 
@@ -35,11 +36,6 @@ firebase = pyrebase.initialize_app(firebase_config)
 auth = firebase.auth()
 db = firebase.database()
 
-@app.before_request
-def make_session_permanent():
-    session.permanent = True
-    app.permanent_session_lifetime = timedelta(minutes=30)  # Set the timeout (e.g., 30 minutes)
-
 # optimized
 # this will be the home page showing ('i need help' and 'i can help')
 @app.route('/', methods=['GET', 'POST'])
@@ -50,40 +46,27 @@ def home():
 
 # redirects to a signin or signup page of helpee)
 @app.route('/sign_in_helpee', methods=['GET', 'POST'])
-def sign_in_helpee():
+def sign_in_helpee():   
+    # Forget any user_id
+    session.clear()
+    session['user_role'] = 'helpee'
+
     if request.method == "POST":
         email = request.form['helpee_email']
         password = request.form['helpee_password']
         
         try:
             user = auth.sign_in_with_email_and_password(email, password)
-            user_id = user['localId']
 
             # session has only user_id now
-            session['user_id'] = user_id
-
-            # print("session", session)
+            session['user_id'] = user['localId']
 
             # Fetch user data from the database
-            user_data = db.child('people').child('helpee').child(user_id).get().val()
-            # print("user", user_data)
+            user_data = db.child('people').child('helpee').child(session['user_id']).get().val()
 
-            # Check if user_data exists
-            if user_data and 'data' in user_data:
-                # Store user-specific data in the session using the user_id as part of the key
-                session['user_data'] = user_data
+            session['user_data'] = user_data
                 
-                # this is how you acess the user data with 'data' and 'exams'
-                # data can be acessed by futher indexing session['user_data]['data']
-                """Important: this is where the whole data is stored currently"""
-                # print("user data is here:", session['user_data'])
-
-                # Successful login, redirect the user to the desired page
-                # print("User logged in:", user_id)
-                return redirect('/rest_page_for_helpee')
-            else:
-                # If user data is missing, display an error message
-                return render_template('(helpee)login.html', error="User data not found.")
+            return redirect('/rest_page_for_helpee')
             
         except requests.exceptions.HTTPError as e:
             # Invalid credentials (HTTP 400 status code)
@@ -102,8 +85,12 @@ def sign_in_helpee():
 @app.route('/sign_up_helpee', methods=['GET', 'POST'])
 def sign_up_helpee():
     '''signup page'''
+    # clearing the data 
+    session.clear()
+
     if request.method == 'POST':
         try:
+
             email = request.form['email']
             password = request.form['password']
             confirm_password = request.form['cpassword']
@@ -116,33 +103,37 @@ def sign_up_helpee():
             parent_name = request.form['parent_name']
             institute = request.form['institute_name']
             guardian_contact = request.form['parent_contact_number']
+
             user = auth.create_user_with_email_and_password(email, password)
-            user_id = user['localId']
 
-                # Create a dictionary with user data
-            user_data = {
-                'name': self_name,
-                'email': email,
-                'self_contact': self_contact,
-                'gender': gender,
-                'edu': edu,
-                'address': address,
-                'udid': udid,
-                'institute': institute,
-                'parent_name': parent_name,
-                'guardian_contact': guardian_contact
-                }
-            
-            # Store the user data in the Firebase Realtime Database under the user ID
-            db.child('people').child('helpee').child(user_id).child('data').set(user_data)
-
-            # Data successfully saved, render the success template
-            return redirect('/sign_in_helpee')
-            
         except Exception as e:
             # Error occurred during sign-up, show an error message
-            return render_template('(helpee)signup.html', error="An error occurred during sign-up: " + str(e))
+            return apology('The Email Already Exists')
+        user_id = user['localId']
 
+            # Create a dictionary with user data
+        user_data = {
+            'name': self_name,
+            'email': email,
+            'self_contact': self_contact,
+            'gender': gender,
+            'edu': edu,
+            'address': address,
+            'udid': udid,
+            'institute': institute,
+            'parent_name': parent_name,
+            'guardian_contact': guardian_contact
+            }
+        
+
+        # Store the user data in the Firebase Realtime Database under the user ID
+        db.child('people').child('helpee').child(user_id).child('data').set(user_data)
+
+        # Data successfully saved, render the success template
+        print('method post')
+        return redirect('/sign_in_helpee')
+            
+    # print('method get')
     return render_template('(helpee)signup.html')
 
 
@@ -173,6 +164,7 @@ def forgot_password():
 
 # fixed
 @app.route('/rest_page_for_helpee', methods=['GET', 'POST'])
+@login_required
 def rest_page_for_helpee():
 
     # this is the complete data here about the user
@@ -187,6 +179,7 @@ def rest_page_for_helpee():
         return render_template('(helpee)rest_page.html', data=user_data['data'], info=None)
     
 @app.route('/rest_page_for_helper', methods=['GET', 'POST'])
+@login_required
 def rest_page_for_helper():
 
     # this is the complete data here about the user
@@ -214,6 +207,7 @@ def rest_page_for_helper():
 
 
 @app.route('/get_help', methods=['GET', 'POST'])
+@login_required
 def get_help():
     try:
         if request.method == 'POST':
@@ -265,7 +259,13 @@ def get_help():
 
 # redirects to signin or signup page of helper
 @app.route('/sign_in_helper', methods=['GET', 'POST'])
+# @login_required
 def sign_in_helper():
+    # forget any user_id
+    session.clear()
+    session['user_role'] = 'helper'
+    # print('abcdata', session['user_role'])
+
     if request.method == "POST":
         email = request.form['helper_email']
         password = request.form['helper_password']
@@ -296,6 +296,10 @@ def sign_in_helper():
     
 @app.route('/sign_up_helper', methods=['GET', 'POST'])
 def sign_up_helper():
+
+    # clearing the data 
+    session.clear() 
+
     if request.method == 'POST':
         try:
             name = request.form['name']
@@ -309,6 +313,12 @@ def sign_up_helper():
             contact = request.form['contact_number']
             occupation = request.form['occupation']
             id_proof = request.form['id_proof']
+
+            # Check if the email already exists in the database
+            existing_user = auth.get_account_info(email)
+            if existing_user:
+                # todo an error message
+                return apology('Email already exists')
 
             user = auth.create_user_with_email_and_password(email, password)
 

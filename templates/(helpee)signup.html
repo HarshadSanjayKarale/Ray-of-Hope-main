@@ -10,9 +10,9 @@
     <h1>Get Help</h1>
 
     <div class="container">
-        <form method="POST" onsubmit="showPopup()" autocomplete="on">
+        <form method="post" action="/sign_up_helpee" autocomplete="on">
             <!-- Student Information section -->
-            <label for="name">Student Name:</label>
+            <label for="name">Student Name: {{ error }}</label>
             <input type="text" id="name" name="name" required><br>
 
             <label for="email">Student Email:</label>
@@ -151,9 +151,9 @@
     // Initially update the submit button status
     updateSubmitButtonStatus();
 
-    function showPopup() {
-        alert("Your request for help has been submitted.");
-    }
+    // function showPopup() {
+    //     alert("Your request for help has been submitted.");
+    // }
     
     </script>
 </body>
