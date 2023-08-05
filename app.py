@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import os
 from helpers import login_required,apology
 
+# loads the data of env file
 load_dotenv()
 
 # Initialize Flask app
