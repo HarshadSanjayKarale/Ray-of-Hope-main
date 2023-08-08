@@ -21,7 +21,9 @@
                     </div>
                     <div class="field">
                         <input type="password" placeholder="Password" name="helpee_password" required {% if invalid_input %}class="invalid"{% endif %}>
+                        <span class="show-password-icon" id="showPasswordIcon" onclick="togglePasswordVisibility()">&#128065;</span>
                     </div>
+                    
                     <div class="error-message" id="error-message" {% if invalid_input %}style="color: red;"{% endif %}>{{ error }}</div>
                     <div class="pass-link"><a href="#" id="forgotPasswordLink">Forgot password?</a></div>
                     <input type="hidden" id="apiKey" value="AIzaSyDbIakxd3dISxi3cAlP4rU9M1RMszuhtAA">
@@ -92,6 +94,19 @@
         event.preventDefault();
         forgotPassword();
     });
+
+    function togglePasswordVisibility() {
+        var passwordField = document.getElementsByName("helpee_password")[0];
+        var showPasswordIcon = document.getElementById("showPasswordIcon");
+
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            showPasswordIcon.innerHTML = "&#128064;"; // Change icon to a crossed-out eye
+        } else {
+            passwordField.type = "password";
+            showPasswordIcon.innerHTML = "&#128065;"; // Change icon back to an open eye
+        }
+    }
     
 </script>
     

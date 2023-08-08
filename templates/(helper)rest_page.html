@@ -59,6 +59,15 @@
                     <th>Contact</th>
                     <th>Help</th>
                 </tr>
+                {% if not info %}
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                {% endif %}
                 {% for info in exam_info %}
                 <tr>
                     <td>{{ info.get('name') }}</td>

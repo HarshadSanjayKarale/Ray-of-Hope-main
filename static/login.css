@@ -159,3 +159,27 @@ form .btn input[type="submit"]{
   font-size: 14px;
   margin-top: 5px;
 }
+
+.form-inner form .field {
+  height: 50px;
+  width: 100%;
+  margin-top: 20px;
+  position: relative; /* Add this line to create a positioning context for the icon */
+}
+
+
+
+/* Add this CSS for the "Show Password" icon */
+.show-password-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 20px;
+  color: #999;
+}
+
+.show-password-icon:hover {
+  color: #1a75ff;
+}
