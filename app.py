@@ -12,7 +12,8 @@ import pyrebase
 from flask_session import Session
 import requests.exceptions
 from email.message import EmailMessage
-import ssl, smtplib
+import ssl
+import smtplib
 from dotenv import load_dotenv
 import os
 from helpers import login_required, apology
@@ -63,8 +64,8 @@ def sign_in_helpee():
     session["user_role"] = "helpee"
 
     if request.method == "POST":
-        email = request.form["helpee_email"]
-        password = request.form["helpee_password"]
+        email = request.form.get("helpee_email")
+        password = request.form.get("helpee_password")
 
         try:
             user = auth.sign_in_with_email_and_password(email, password)
@@ -74,7 +75,8 @@ def sign_in_helpee():
 
             # Fetch user data from the database
             user_data = (
-                db.child("people").child("helpee").child(session["user_id"]).get().val()
+                db.child("people").child("helpee").child(
+                    session["user_id"]).get().val()
             )
 
             session["user_data"] = user_data
@@ -110,18 +112,18 @@ def sign_up_helpee():
     # make something so that the js works
     if request.method == "POST":
         try:
-            email = request.form["email"]
-            password = request.form["password"]
-            confirm_password = request.form["cpassword"]
-            self_name = request.form["name"]
-            self_contact = request.form["contact_number"]
-            gender = request.form["gender"]
-            edu = request.form["grade_level"]
-            address = request.form["address"]
-            udid = request.form["unique_disability_id"]
-            parent_name = request.form["parent_name"]
-            institute = request.form["institute_name"]
-            guardian_contact = request.form["parent_contact_number"]
+            email = request.form.get("email")
+            password = request.form.get("password")
+            confirm_password = request.form.get("cpassword")
+            self_name = request.form.get("name")
+            self_contact = request.form.get("contact_number")
+            gender = request.form.get("gender")
+            edu = request.form.get("grade_level")
+            address = request.form.get("address")
+            udid = request.form.get("unique_disability_id")
+            parent_name = request.form.get("parent_name")
+            institute = request.form.get("institute_name")
+            guardian_contact = request.form.get("parent_contact_number")
 
             user = auth.create_user_with_email_and_password(email, password)
 
@@ -145,7 +147,8 @@ def sign_up_helpee():
         }
 
         # Store the user data in the Firebase Realtime Database under the user ID
-        db.child("people").child("helpee").child(user_id).child("data").set(user_data)
+        db.child("people").child("helpee").child(
+            user_id).child("data").set(user_data)
 
         # Data successfully saved, render the success template
         print("method post")
@@ -190,7 +193,8 @@ def forgot_password():
 @login_required
 def rest_page_for_helpee():
     # this is the complete data here about the user
-    user_data = db.child("people").child("helpee").child(session["user_id"]).get().val()
+    user_data = db.child("people").child(
+        "helpee").child(session["user_id"]).get().val()
 
     # check if exams are existing in user_data
     if "exams" in user_data:
@@ -242,12 +246,12 @@ def get_help():
     try:
         if request.method == "POST":
             # collecting data from forms
-            subject = request.form["exam_needs_help"]
-            med_language = request.form["language_medium"]
-            centre = request.form["location"]
-            exam_date = request.form["exam_date"]
-            start_time = request.form["exam_time"]
-            end_time = request.form["time_duration"]
+            subject = request.form.get("exam_needs_help")
+            med_language = request.form.get("language_medium")
+            centre = request.form.get("location")
+            exam_date = request.form.get("exam_date")
+            start_time = request.form.get("exam_time")
+            end_time = request.form.get("time_duration")
 
             # Data json
             helpee_data = {
@@ -281,7 +285,8 @@ def get_help():
 
             # Fetch the updated user data from the database after submitting the form
             user_data = (
-                db.child("people").child("helpee").child(session["user_id"]).get().val()
+                db.child("people").child("helpee").child(
+                    session["user_id"]).get().val()
             )
             if user_data:
                 # Update the session data for 'user_data' and 'exams'
@@ -358,25 +363,22 @@ def sign_up_helper():
 
     if request.method == "POST":
         try:
-            name = request.form["name"]
-            email = request.form["email"]
-            password = request.form["password"]
-            confirm_password = request.form["cpassword"]
-            gender = request.form["gender"]
-            edu = request.form["grade_level"]
-            institute = request.form["institute_name"]
-            address = request.form["address"]
-            contact = request.form["contact_number"]
-            occupation = request.form["occupation"]
-            id_proof = request.form["id_proof"]
-            id_proof_value = request.form["id_proof_value"]
-            # Check if the email already exists in the database
-            # existing_user = auth.get_account_info(email)
-            # if existing_user:
-            #     # todo an error message
-            #     return apology("Email already exists")
+            name = request.form.get("name")
+            email = request.form.get("email")
+            password = request.form.get("password")
+            confirm_password = request.form.get("cpassword")
+            gender = request.form.get("gender")
+            edu = request.form.get("grade_level")
+            institute = request.form.get("institute_name")
+            address = request.form.get("address")
+            contact = request.form.get("contact_number")
+            occupation = request.form.get("occupation")
+            id_proof = request.form.get("id_proof")
+            id_proof_value = request.form.get("id_proof_value")
+
             try:
-                user = auth.create_user_with_email_and_password(email, password)
+                user = auth.create_user_with_email_and_password(
+                    email, password)
             except Exception as e:
                 return apology('user already exists')
 
@@ -418,14 +420,16 @@ def sign_up_helper():
 def help_button_clicked():
     data = request.get_json()  # Get the JSON data sent in the request body
     exam_id = data.get("examid")  # Extract the '_examid' from the JSON data
-    parent_node = data.get("parentnode")  # Extract the '_parentnode' from the JSON data
+    # Extract the '_parentnode' from the JSON data
+    parent_node = data.get("parentnode")
 
     db.child("people").child("helpee").child(parent_node).child("exams").child(
         exam_id
     ).update({"helper_found": True})
 
     helpee_data = (
-        db.child("people").child("helpee").child(parent_node).child("data").get().val()
+        db.child("people").child("helpee").child(
+            parent_node).child("data").get().val()
     )
     helper_data = (
         db.child("people")
