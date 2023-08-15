@@ -131,6 +131,7 @@ def sign_up_helpee():
             # Error occurred during sign-up, show an error message
             return apology("The Email Already Exists")
         user_id = user["localId"]
+        print(user_id)
 
         # Create a dictionary with user data
         user_data = {
