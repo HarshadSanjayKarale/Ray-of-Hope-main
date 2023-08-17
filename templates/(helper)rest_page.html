@@ -52,7 +52,7 @@
 		<div class="container">
 			<div class="card-container">
 				<h1 class="heading">Students Need the Help</h1>
-
+​
 				<table>
 					<tr>
 						<th>Name</th>
@@ -91,6 +91,15 @@
 				</table>
 			</div>
 		</div>
+		<script
+			type="text/javascript"
+			src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"
+		></script>
+		<script type="text/javascript">
+			(function () {
+				emailjs.init("VzNhQht7buCemMozg");
+			})();
+		</script>
 		<script>
 			function onHelpButtonClick(examId, parentNode) {
 				// Send the data to a Python function using a fetch POST request
@@ -104,20 +113,60 @@
 					.then((response) => response.json()) // Parse the JSON response
 					.then((data) => {
 						// Use helpee_name and helpee_email from the response
-						// console.log("Helpee Name:", data.helpee_name);
-						// console.log("Helpee Email:", data.helpee_email);
-						// console.log("Helper Name:", data.helper_name);
-						// console.log("Helper Email:", data.helper_email);
-
+						console.log("Helpee Name:", data.helpee_name);
+						console.log("Helpee Email:", data.helpee_email);
+						console.log("Helper Name:", data.helper_name);
+						console.log("Helper Email:", data.helper_email);
+​
 						// logic here
-
-						
-
+​
+						var params = {
+							name: data.helper_name,
+							email: data.helper_email,
+						};
+​
+						const serviceID = "service_8lwu5qp";
+						const templateID = "template_lt41fpl";
+​
+						emailjs
+							.send(serviceID, templateID, params)
+							.then((res) => {
+								console.log(res);
+								alert("Your message sent successfully to helper!!");
+							})
+							.catch((err) => console.log(err));
+​
 						// logic ends
-
+​
+						// Optionally, you can update the UI or show a success message to the user
+						console.log("Help button clicked successfully!");
+​
+						var params1 = {
+							name_helpee: data.helpee_name,
+							email_helpee: data.helpee_email,
+						};
+​
+						const serviceID1 = "service_pp1kvwy";
+						const templateID1 = "template_m8pkk12";
+​
+						emailjs
+							.send(serviceID1, templateID1, params1)
+							.then((res) => {
+								console.log(res);
+								alert("Your message sent successfully to helpee!!");
+							})
+							.catch((err) => console.log(err));
+​
+						// logic ends
+​
 						// Optionally, you can update the UI or show a success message to the user
 						console.log("Help button clicked successfully!");
 					})
+					
+​
+					//for the hepee mail
+​
+					
 					.catch((error) => {
 						console.log("Failed to click the Help button:", error);
 					});
