@@ -7,6 +7,7 @@ from flask import (
     redirect,
     session,
     Response,
+    jsonify
 )
 import pyrebase
 from flask_session import Session
@@ -230,6 +231,8 @@ def rest_page_for_helper():
                 if not exam_data.get("helper_found", True):
                     exams_with_helper_not_found.append(exam_data)
 
+        session['user_data'] = user_data["data"]
+
         # Fetch exam-specific data from user_data
         return render_template(
             "(helper)rest_page.html",
@@ -441,37 +444,16 @@ def help_button_clicked():
         .val()
     )
 
-    # mailing
-    subject_helper = f"This is a confirmation email"
-    body_helper = f"""
-    Thank You for participating in this cause
-    You will be helping {helpee_data['name']} 
-    Email : {helpee_data['email']}"""
-    subject_helpee = f"This is a confirmation email"
-    body_helpee = f"""
-    Congrats You Have Found a Helper
-    {helper_data['name']} will be helping you  
-    Email : {helper_data['email']}"""
+    # Return a JSON response (optional)
+    response_data = {
+        "helpee_name": helpee_data['name'],
+        "helpee_email": helpee_data['email'],
+        "helper_name": helper_data['name'],
+        "helper_email": helper_data['email']
+    }
 
-    mail_client(helpee_data["email"], subject_helpee, body_helpee)
-    mail_client(helper_data["email"], subject_helper, body_helper)
-
-
-def mail_client(email, subject, body):
-    em = EmailMessage()
-    em["From"] = email_sender
-    em["To"] = email
-    em["Subject"] = subject
-    em.set_content(body)
-
-    context = ssl.create_default_context()
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as mail:
-        mail.login(email_sender, gmail_password)
-        mail.sendmail(email_sender, email, em.as_string())
-
-    return render_template("(a)home_page.html")
-
+    # Convert the response data to JSON and return
+    return jsonify(response_data)
 
 if __name__ == "__main__":
     app.run(debug=True)
