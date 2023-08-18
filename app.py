@@ -1,3 +1,4 @@
+# Import Statements
 from flask import (
     Flask,
     request,
@@ -25,12 +26,10 @@ load_dotenv()
 # Initialize Flask app
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+# Done to make a cookie for the user
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
-
-email_sender = os.getenv("EMAIL_SENDER")
-gmail_password = os.getenv("EMAIL_PASSWORD")
 
 # Initialize Firebase config
 firebase_config = {
@@ -44,12 +43,12 @@ firebase_config = {
     "measurementId": os.getenv("MEASUREMENT_ID"),
 }
 
+# done to initialize firebase and use its functions
 firebase = pyrebase.initialize_app(firebase_config)
 auth = firebase.auth()
 db = firebase.database()
 
 
-# optimized
 # this will be the home page showing ('i need help' and 'i can help')
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -57,21 +56,25 @@ def home():
     return render_template("(a)home_page.html")
 
 
-# redirects to a signin or signup page of helpee)
+# redirects to a signin page of helpee
 @app.route("/sign_in_helpee", methods=["GET", "POST"])
 def sign_in_helpee():
+    '''This is the login page of helpee'''
     # Forget any user_id
     session.clear()
+    # Set role (this can be used later to check if the person is helper or helpee in the program)
     session["user_role"] = "helpee"
 
     if request.method == "POST":
         email = request.form.get("helpee_email")
         password = request.form.get("helpee_password")
 
+        # this tries to sign in the user and if the func gives error,
+        # it means that the credentials are invalid
         try:
             user = auth.sign_in_with_email_and_password(email, password)
 
-            # session has only user_id now
+            # this is used later to get data from this user_id
             session["user_id"] = user["localId"]
 
             # Fetch user data from the database
@@ -83,9 +86,8 @@ def sign_in_helpee():
             session["user_data"] = user_data
 
             return redirect("/rest_page_for_helpee")
-
+        # if the credentails are invalid we show invalid credentails on html
         except requests.exceptions.HTTPError as e:
-            # Invalid credentials (HTTP 400 status code)
             return render_template(
                 "(helpee)login.html",
                 error="Invalid credentials. Please try again.",
@@ -103,14 +105,11 @@ def sign_in_helpee():
     return render_template("(helpee)login.html")
 
 
-# need a feature that checks if the email exists in realtime
-# currently just refreshes the page if the user is already present
 @app.route("/sign_up_helpee", methods=["GET", "POST"])
 def sign_up_helpee():
-    """signup page"""
+    """signup page for helpee"""
     # clearing the data
     session.clear()
-    # make something so that the js works
     if request.method == "POST":
         try:
             email = request.form.get("email")
@@ -126,13 +125,15 @@ def sign_up_helpee():
             institute = request.form.get("institute_name")
             guardian_contact = request.form.get("parent_contact_number")
 
+            # we try to create a user here since if the user is present firebase throws an error
+            # this error is caught by our except block returning (The Email Already Exists)
             user = auth.create_user_with_email_and_password(email, password)
 
         except Exception as e:
             # Error occurred during sign-up, show an error message
             return apology("The Email Already Exists")
+        # if sucessful store the local id
         user_id = user["localId"]
-        print(user_id)
 
         # Create a dictionary with user data
         user_data = {
@@ -153,17 +154,18 @@ def sign_up_helpee():
             user_id).child("data").set(user_data)
 
         # Data successfully saved, render the success template
-        print("method post")
         return redirect("/sign_in_helpee")
 
     # print('method get')
     return render_template("(helpee)signup.html")
 
+# this is firebase inbuilt function nothing to do here
 
-# optimized
+
 @app.route("/forgot_password", methods=["POST"])
 def forgot_password():
     """sends an email after which the user can change the password"""
+    '''directly using firebase for this so no problem will arize here unless firebase itself messes up'''
     try:
         email = request.json.get("email")
 
@@ -190,15 +192,17 @@ def forgot_password():
         )
 
 
-# fixed
 @app.route("/rest_page_for_helpee", methods=["GET", "POST"])
 @login_required
 def rest_page_for_helpee():
+    '''This is the page helpee is redirected to after logging in'''
     # this is the complete data here about the user
     user_data = db.child("people").child(
         "helpee").child(session["user_id"]).get().val()
 
     # check if exams are existing in user_data
+    # if there are no exams then pass info as none
+    # but in case there are exams present there pass the data as user data and info as the exams of the user
     if "exams" in user_data:
         # Fetch exam-specific data from user_data
         return render_template(
@@ -207,6 +211,7 @@ def rest_page_for_helpee():
             info=user_data.get("exams"),
         )
     else:
+        # In case of the user has not asked for help
         print("No exam data here")
         return render_template(
             "(helpee)rest_page.html", data=user_data["data"], info=None
@@ -216,14 +221,13 @@ def rest_page_for_helpee():
 @app.route("/rest_page_for_helper", methods=["GET", "POST"])
 @login_required
 def rest_page_for_helper():
+    '''Redirect helper here after a sucessful login'''
     # this is the complete data here about the user
     user_data = session.get("helper_user_data")
-    # print("user data:" , user_data['data'])
-
     student_data = db.child("people").child("helpee").get().val()
-    # print("Student data", student_data)
 
     exams_with_helper_not_found = []
+    # basically we iterate to get the data of exams whose helper_found was false
     if student_data != None:
         for user_id, data in student_data.items():
             exams = data.get("exams", {})
@@ -233,13 +237,14 @@ def rest_page_for_helper():
 
         session['user_data'] = user_data["data"]
 
-        # Fetch exam-specific data from user_data
+        # display all the data of people who haave helper_found = false
         return render_template(
             "(helper)rest_page.html",
             data=user_data["data"],
             exam_info=exams_with_helper_not_found,
         )
     else:
+        # if no student is in the db who needs help
         flash('No students found')
         return render_template('(helper)rest_page.html', data=user_data["data"], info={})
 
@@ -454,6 +459,7 @@ def help_button_clicked():
 
     # Convert the response data to JSON and return
     return jsonify(response_data)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
