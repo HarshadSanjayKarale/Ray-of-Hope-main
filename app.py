@@ -13,7 +13,6 @@ from flask import (
 import pyrebase
 from flask_session import Session
 import requests.exceptions
-from email.message import EmailMessage
 import ssl
 import smtplib
 from dotenv import load_dotenv
